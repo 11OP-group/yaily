@@ -57,3 +57,5 @@ dkms.conf
 
 # zig 
 .zig-cache/
+compile_flags.txt
+zig-out/
