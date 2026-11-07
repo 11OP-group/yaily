@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include "yaily/utils.h"
 
 int main() {
   printf("Hello Yaily!\n");
