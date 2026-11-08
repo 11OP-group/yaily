@@ -19,6 +19,7 @@ pub fn build(b: *std.Build) void {
         .files = &.{ 
             "src/main.c", 
             "src/utils.c", 
+            "src/lexer.c", 
         },
         .flags = &.{ "-Wall", "-Wextra", "-std=c11" },
     });
