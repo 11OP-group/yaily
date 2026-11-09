@@ -68,11 +68,41 @@ void left_trim(Lexer *l) {
   }
 }
 
+Token string(Lexer *l) {
+  int len = 2;
+
+  while (peek(l) != '"' && !is_at_end(l)) {
+    len++;
+
+    if (peek(l) == '\n') {
+      l->line++;
+      l->bol = l->cursor;
+    }
+
+    advance(l);
+  }
+
+  if (is_at_end(l)) {
+    return token_error(l, "Unterminated string.");
+  }
+
+  // close quote
+  advance(l);
+
+  return token_new(l, TOKEN_STRING, len);
+}
+
 Token lexer_next(Lexer *l) {
   left_trim(l);
 
   if (is_at_end(l)) {
-    return token_new(l, TOKEN_EOF, 1);
+    return (Token){
+        .text = "EOF",
+        .type = TOKEN_EOF,
+        .text_len = 3,
+        .row = l->line,
+        .col = l->cursor - l->bol,
+    };
   }
 
   char c = advance(l);
@@ -95,8 +125,14 @@ Token lexer_next(Lexer *l) {
     }
     break;
 
-  case '\n':
-    Token t = token_new(l, TOKEN_NEWLINE, 1);
+  case '\n':;
+    Token t = {
+        .text = "NEWLINE",
+        .type = TOKEN_NEWLINE,
+        .text_len = 7,
+        .row = l->line,
+        .col = l->cursor - l->bol,
+    };
     l->line++;
     l->bol = l->cursor;
     return t;
@@ -169,11 +205,12 @@ Token lexer_next(Lexer *l) {
     }
     return token_new(l, TOKEN_BANG, 1);
 
+  case '"':
+    return string(l);
+
     // case ':':
     //   return atom();
     // case '\'':
-    // case '"':
-    //   return string();
     // case '#':
     //   return macro();
     // case '@':
