@@ -1,6 +1,5 @@
 #include "yaily/lexer.h"
 #include "yaily/utils.h"
-#include <stdio.h>
 
 void interpret(char *code) {
   Lexer l = lexer_new(code, 1024);

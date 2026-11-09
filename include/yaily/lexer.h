@@ -7,6 +7,7 @@
 typedef enum {
   TOKEN_EOF = 0,       // Конец файла
   TOKEN_ERROR,         // Ошибка лексического анализа
+  TOKEN_SKIP,          // Токен пропуска (комментариев)
                        //
   TOKEN_NEWLINE,       // \n
                        //
