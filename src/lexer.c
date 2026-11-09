@@ -20,7 +20,7 @@ Token token_new(Lexer *l, TokenType type, int text_len) {
       .type = type,
       .text_len = text_len,
       .row = l->line,
-      .col = l->cursor /* - l->bol - text_len */,
+      .col = l->cursor - l->bol,
   };
 }
 
