@@ -7,3 +7,5 @@
 #include <stdlib.h>
 
 #include <string.h>
+
+bool cmp_string(const char *lhs, int lhs_len, const char *rhs, int rhs_len);

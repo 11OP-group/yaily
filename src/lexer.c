@@ -1,5 +1,6 @@
 #include "yaily/lexer.h"
 #include "yaily/utils.h"
+#include <stdatomic.h>
 #include <string.h>
 
 Lexer lexer_new(const char *content, int content_len) {
@@ -20,7 +21,7 @@ Token token_new(Lexer *l, TokenType type, int text_len) {
       .type = type,
       .text_len = text_len,
       .row = l->line,
-      .col = l->cursor - l->bol,
+      .col = l->cursor - l->bol - text_len,
   };
 }
 
@@ -34,10 +35,20 @@ Token token_error(Lexer *l, const char *message) {
   };
 }
 
-char advance(Lexer *l) { return l->content[l->cursor++]; }
-char peek(Lexer *l) { return l->content[l->cursor]; }
+bool is_at_end(Lexer *l) { return l->cursor >= l->content_len; }
+bool is_digit(char c) { return c >= '0' && c <= '9'; }
 
-bool is_at_end(Lexer *l) { return l->content[l->cursor] == '\0'; }
+bool is_pascal_case(char c) {
+  return (c >= 'a' && c <= 'z') || //
+         (c >= 'A' && c <= 'Z') || //
+         (c >= '0' && c <= '9');
+}
+
+bool is_snake_case(char c) {
+  return (c >= 'a' && c <= 'z') || //
+         (c >= '0' && c <= '9') || //
+         c == '_';                 //
+}
 
 bool match(Lexer *l, char expected) {
   if (is_at_end(l)) {
@@ -51,6 +62,16 @@ bool match(Lexer *l, char expected) {
   l->cursor++;
 
   return true;
+}
+
+char advance(Lexer *l) { return l->content[l->cursor++]; }
+
+char peek(Lexer *l) {
+  if (is_at_end(l)) {
+    return '\0';
+  }
+
+  return l->content[l->cursor];
 }
 
 void left_trim(Lexer *l) {
@@ -68,7 +89,7 @@ void left_trim(Lexer *l) {
   }
 }
 
-Token string(Lexer *l) {
+Token token_string(Lexer *l) {
   int len = 2;
 
   while (peek(l) != '"' && !is_at_end(l)) {
@@ -92,6 +113,67 @@ Token string(Lexer *l) {
   return token_new(l, TOKEN_STRING, len);
 }
 
+Token token_float(Lexer *l, int len) {
+  advance(l);
+  len++;
+
+  while (is_digit(peek(l))) {
+    len++;
+    advance(l);
+  }
+
+  return token_new(l, TOKEN_FLOAT, len);
+}
+
+Token token_number(Lexer *l) {
+  int len = 1;
+
+  while (is_digit(peek(l))) {
+    len++;
+    advance(l);
+  }
+
+  if (peek(l) == '.') {
+    return token_float(l, len);
+  }
+
+  return token_new(l, TOKEN_INTEGER, len);
+}
+
+Token token_ident_pascal(Lexer *l) {
+  int len = 1;
+
+  while (is_pascal_case(peek(l))) {
+    len++;
+    advance(l);
+  }
+
+  return token_new(l, TOKEN_IDENT_PASCAL, len);
+}
+
+Token token_ident_snake(Lexer *l) {
+  int len = 1;
+
+  while (is_snake_case(peek(l))) {
+    len++;
+    advance(l);
+  }
+
+  return token_new(l, TOKEN_IDENT_SNAKE, len);
+}
+
+Token check_keyword(Token t) {
+  if (cmp_string(t.text, t.text_len, "if", 2)) {
+    t.type = TOKEN_IF;
+  } else if (cmp_string(t.text, t.text_len, "else", 4)) {
+    t.type = TOKEN_ELSE;
+  } else if (cmp_string(t.text, t.text_len, "import", 6)) {
+    t.type = TOKEN_IMPORT;
+  }
+
+  return t;
+}
+
 Token lexer_next(Lexer *l) {
   left_trim(l);
 
@@ -107,18 +189,32 @@ Token lexer_next(Lexer *l) {
 
   char c = advance(l);
 
+  if (is_digit(c)) {
+    return token_number(l);
+  }
+
+  if (is_snake_case(c)) {
+    return check_keyword(token_ident_snake(l));
+  }
+
+  if (is_pascal_case(c)) {
+    return token_ident_pascal(l);
+  }
+
   switch (c) {
   case '/':
-    if (match(l, '/') && !is_at_end(l)) {
+    if (match(l, '/')) {
+      int len = 2;
       while (peek(l) != '\n' && !is_at_end(l)) {
         advance(l);
+        len++;
       }
       return (Token){
           .text = "COMMENT",
-          .type = TOKEN_SKIP,
+          .type = TOKEN_COMMENT,
           .text_len = 7,
           .row = l->line,
-          .col = l->cursor - l->bol,
+          .col = l->cursor - l->bol - len,
       };
     } else {
       return token_new(l, TOKEN_SLASH, 1);
@@ -206,17 +302,8 @@ Token lexer_next(Lexer *l) {
     return token_new(l, TOKEN_BANG, 1);
 
   case '"':
-    return string(l);
-
-    // case ':':
-    //   return atom();
-    // case '\'':
-    // case '#':
-    //   return macro();
-    // case '@':
-    //   return deco();
+    return token_string(l);
   }
 
-  // printf("\tNot impl: lexer_next\n");
   return token_error(l, "Unexpected character.");
 }

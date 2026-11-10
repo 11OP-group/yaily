@@ -1,8 +1,10 @@
 #include "yaily/lexer.h"
 #include "yaily/utils.h"
+#include <stddef.h>
+#include <stdio.h>
 
 void interpret(char *code) {
-  Lexer l = lexer_new(code, 1024);
+  Lexer l = lexer_new(code, strlen(code));
 
   int line = -1;
   for (;;) {
@@ -23,7 +25,6 @@ void interpret(char *code) {
     }
   }
 
-  printf("Not impl: repl\n");
   return;
 }
 
@@ -38,10 +39,34 @@ void repl() {
     }
 
     interpret(line);
+    printf("Not impl: repl\n");
   }
 }
 
-void run_file(char *path) { printf("Not implemented\nPath: %s", path); }
+char *read_file(char *path) {
+  FILE *file = fopen(path, "rb");
+
+  fseek(file, 0L, SEEK_END);
+  size_t file_size = ftell(file);
+  rewind(file);
+
+  char *buffer = (char *)malloc(file_size + 1);
+  size_t bytes_read = fread(buffer, sizeof(char), file_size, file);
+  buffer[bytes_read] = '\0';
+
+  fclose(file);
+
+  return buffer;
+}
+
+void run_file(char *path) {
+  char *code = read_file(path);
+
+  interpret(code);
+
+  free(code);
+  printf("Not implemented\nPath: %s", path);
+}
 
 int main(int argc, char *argv[]) {
   if (argc == 1) {

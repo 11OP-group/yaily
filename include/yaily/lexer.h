@@ -5,17 +5,17 @@
 #define MAX_TOKEN_LINGTH 128
 
 typedef enum {
-  TOKEN_EOF = 0,       // Конец файла
-  TOKEN_ERROR,         // Ошибка лексического анализа
-  TOKEN_SKIP,          // Токен пропуска (комментариев)
-                       //
-  TOKEN_NEWLINE,       // \n
-                       //
-  TOKEN_IDENT_PASCAL,  // Point, Int, String
-  TOKEN_IDENT_SNAKE,   // point, user_id, add
-                       //
-  TOKEN_ATOM,          // :atom, :ok, :error
-                       //
+  TOKEN_EOF = 0,      // Конец файла
+  TOKEN_ERROR,        // Ошибка лексического анализа
+  TOKEN_COMMENT,      // Токен пропуска (комментариев)
+                      //
+  TOKEN_NEWLINE,      // \n
+                      //
+  TOKEN_IDENT_PASCAL, // Point, Int, NewString
+  TOKEN_IDENT_SNAKE,  // point, user_id, add
+                      //
+  // TOKEN_ATOM,          // :atom, :ok, :error
+  //
   TOKEN_INTEGER,       // 42
   TOKEN_FLOAT,         // 0.5
   TOKEN_STRING,        // "Hello world"
@@ -59,8 +59,8 @@ typedef enum {
                        //
   TOKEN_BANG,          // !
                        //
-  TOKEN_HASH,          // #
-  TOKEN_AT             // @
+  // TOKEN_HASH,          // #
+  // TOKEN_AT             // @
 } TokenType;
 
 // typedef struct {
